@@ -27,21 +27,21 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const [expandedContractId, setExpandedContractId] = useState<string | null>(null);
-  
+
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [deleteContractTarget, setDeleteContractTarget] = useState<Contract | null>(null);
-  const [deletePaymentTarget, setDeletePaymentTarget] = useState<{paymentId: string, contractId: string, itemName: string} | null>(null);
-  
+  const [deletePaymentTarget, setDeletePaymentTarget] = useState<{ paymentId: string, contractId: string, itemName: string } | null>(null);
+
   const [isProjModalOpen, setIsProjModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showProjErrors, setShowProjErrors] = useState(false);
   const [projErrorText, setProjErrorText] = useState<string | null>(null);
-  
+
   const [isContractModalOpen, setIsContractModalOpen] = useState<{ isOpen: boolean, projectId?: string }>({ isOpen: false });
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [showContractErrors, setShowContractErrors] = useState(false);
   const [contractErrorText, setContractErrorText] = useState<string | null>(null);
-  
+
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<{ isOpen: boolean, contractId?: string }>({ isOpen: false });
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [showPaymentErrors, setShowPaymentErrors] = useState(false);
@@ -52,7 +52,7 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
 
   const filteredProjects = useMemo(() => {
     return projects
-      .filter(p => 
+      .filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         customers.find(c => c.id === p.customerId)?.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -86,20 +86,20 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
   const getProjectName = (id: string) => projects.find(p => p.id === id)?.name || '알 수 없는 프로젝트';
   const getContractName = (id: string) => contracts.find(c => c.id === id)?.name || '알 수 없는 계약';
 
-  const [newProject, setNewProject] = useState<Partial<Project>>({ 
+  const [newProject, setNewProject] = useState<Partial<Project>>({
     name: '', customerId: '', budget: 0, deptName: '', managerName: '', managerPhone: '', notes: '', startDate: '', endDate: ''
   });
-  
+
   const [budgetDisplay, setBudgetDisplay] = useState('');
   const [contractAmountDisplay, setContractAmountDisplay] = useState('');
   const [paymentAmountDisplay, setPaymentAmountDisplay] = useState('');
 
-  const [newContract, setNewContract] = useState<Partial<Contract>>({ 
-    category: '매출', type: '개발', name: '', amount: 0, signedDate: '', startDate: '', endDate: '', notes: '', projectId: '', customerId: '' 
+  const [newContract, setNewContract] = useState<Partial<Contract>>({
+    category: '매출', type: '개발', name: '', amount: 0, signedDate: '', startDate: '', endDate: '', notes: '', projectId: '', customerId: ''
   });
 
-  const [newPayment, setNewPayment] = useState<Partial<Payment>>({ 
-    item: '기성', amount: 0, scheduledDate: '', invoiceDate: '', completionDate: '' 
+  const [newPayment, setNewPayment] = useState<Partial<Payment>>({
+    item: '기성', amount: 0, scheduledDate: '', invoiceDate: '', completionDate: ''
   });
 
   const currentPaymentContract = useMemo(() => {
@@ -246,8 +246,8 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
     }
 
     if (currentPaymentContract) {
-      const availableLimit = editingPayment 
-        ? currentPaymentContract.metrics.registeredBalance + editingPayment.amount 
+      const availableLimit = editingPayment
+        ? currentPaymentContract.metrics.registeredBalance + editingPayment.amount
         : currentPaymentContract.metrics.registeredBalance;
 
       if (newPayment.amount > availableLimit) {
@@ -257,18 +257,18 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
     }
 
     const currentStatus = calculatePaymentStatus(newPayment as Payment);
-    
+
     if (editingPayment) {
       onUpdatePayment({ ...newPayment, status: currentStatus } as Payment);
     } else {
-      onAddPayment({ 
-        ...newPayment, 
-        id: Date.now().toString(), 
-        contractId: isPaymentModalOpen.contractId!, 
-        status: currentStatus 
+      onAddPayment({
+        ...newPayment,
+        id: Date.now().toString(),
+        contractId: isPaymentModalOpen.contractId!,
+        status: currentStatus
       } as Payment);
     }
-    
+
     setIsPaymentModalOpen({ isOpen: false });
     setEditingPayment(null);
     setShowPaymentErrors(false);
@@ -341,7 +341,7 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
+        <button
           onClick={() => { setShowProjErrors(false); setProjErrorText(null); setEditingProject(null); setNewProject({ name: '', customerId: '', budget: 0, deptName: '', managerName: '', managerPhone: '', notes: '', startDate: '', endDate: '' }); setBudgetDisplay(''); setIsProjModalOpen(true); }}
           className="w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-md transition-all active:scale-95"
         >
@@ -360,7 +360,7 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             const projContracts = contracts.filter(c => c.projectId === proj.id);
             const salesContracts = projContracts.filter(c => c.category === '매출');
             const purchaseContracts = projContracts.filter(c => c.category === '매입');
-            
+
             const salesTotal = salesContracts.reduce((sum, c) => sum + c.amount, 0);
             const purchaseTotal = purchaseContracts.reduce((sum, c) => sum + c.amount, 0);
 
@@ -369,11 +369,11 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
 
             return (
               <div key={proj.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all hover:border-indigo-200">
-                <div className={`p-5 flex items-center gap-6 cursor-pointer hover:bg-slate-50/80 transition-colors ${isExpanded ? 'bg-indigo-50/30' : ''}`} onClick={() => toggleProject(proj.id)}>
+                <div className={`p-3.5 flex items-center gap-6 cursor-pointer hover:bg-slate-50/80 transition-colors ${isExpanded ? 'bg-indigo-50/30' : ''}`} onClick={() => toggleProject(proj.id)}>
                   <div className="text-indigo-400 shrink-0">
                     {isExpanded ? <ChevronDown size={24} className="text-indigo-600" /> : <ChevronRight size={24} />}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0 space-y-3">
                     <div className="flex items-center gap-4 min-w-0">
                       <h4 className="font-black text-slate-900 text-lg truncate flex items-center gap-2">
@@ -408,32 +408,32 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
 
                   <div className="flex flex-col items-center justify-center gap-2 shrink-0 border-l border-slate-100 pl-6 min-h-[80px]">
                     <div className="flex gap-2">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleEditProject(proj); }} 
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEditProject(proj); }}
                         className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl text-[11px] font-black transition-all border border-slate-100 shadow-sm active:scale-95"
                       >
                         <Pencil size={14} /> 수정
                       </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(proj); }} 
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(proj); }}
                         className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-50 text-slate-400 hover:bg-rose-500 hover:text-white rounded-xl text-[11px] font-black transition-all border border-slate-100 shadow-sm active:scale-95"
                       >
                         <Trash2 size={14} /> 삭제
                       </button>
                     </div>
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        setShowContractErrors(false); 
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowContractErrors(false);
                         setContractErrorText(null);
-                        setEditingContract(null); 
+                        setEditingContract(null);
                         setNewContract({
                           category: '매출', type: '개발', name: '', amount: 0, signedDate: '', startDate: '', endDate: '', notes: '',
                           projectId: proj.id,
                           customerId: proj.customerId
                         });
-                        setIsContractModalOpen({ isOpen: true, projectId: proj.id }); 
-                      }} 
+                        setIsContractModalOpen({ isOpen: true, projectId: proj.id });
+                      }}
                       className="flex items-center justify-center gap-2 w-full py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-[11px] font-black transition-all shadow-md active:scale-95"
                     >
                       <Plus size={14} /> 신규 계약 등록
@@ -453,8 +453,8 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                           const isContractExpanded = expandedContractId === contract.id;
                           return (
                             <div key={contract.id} className="border-l-[6px] border-slate-100 hover:border-indigo-300 transition-all bg-white">
-                              <div 
-                                className={`p-5 pl-8 flex items-center gap-6 cursor-pointer transition-colors ${isContractExpanded ? 'bg-indigo-50/5' : 'hover:bg-slate-50/50'}`} 
+                              <div
+                                className={`p-3.5 pl-6 flex items-center gap-6 cursor-pointer transition-colors ${isContractExpanded ? 'bg-indigo-50/5' : 'hover:bg-slate-50/50'}`}
                                 onClick={() => toggleContract(contract.id)}
                               >
                                 <div className="shrink-0 text-slate-300">
@@ -464,16 +464,15 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                                 <div className="flex-1 space-y-4">
                                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                     <h5 className="text-lg font-black text-slate-900 leading-tight">{contract.name}</h5>
-                                    
+
                                     <div className="flex items-center gap-1.5 text-slate-500 font-bold text-sm">
                                       <Building size={14} />
                                       <span>{getCustomerName(contract.customerId)}</span>
                                     </div>
 
                                     <div className="flex items-center gap-2">
-                                      <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                                        contract.category === '매출' ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'
-                                      }`}>
+                                      <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${contract.category === '매출' ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'
+                                        }`}>
                                         {contract.category}
                                       </span>
                                       <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">
@@ -493,12 +492,11 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                                     <DataPoint label="결제 잔액" value={formatCurrency(metrics.balance)} highlight />
                                     <DataPoint label="등록 잔액" value={formatCurrency(metrics.registeredBalance)} highlight={metrics.registeredBalance > 0} />
                                     <div className="flex items-center border-l pl-4 border-slate-200">
-                                      <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest ${
-                                        metrics.status === '종료' ? 'bg-slate-100 text-slate-500' :
+                                      <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest ${metrics.status === '종료' ? 'bg-slate-100 text-slate-500' :
                                         metrics.status === '진행중' ? 'bg-emerald-100 text-emerald-700' :
-                                        metrics.status === '완료(미결제)' ? 'bg-amber-100 text-amber-700' :
-                                        'bg-indigo-100 text-indigo-700'
-                                      }`}>
+                                          metrics.status === '완료(미결제)' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-indigo-100 text-indigo-700'
+                                        }`}>
                                         {metrics.status}
                                       </span>
                                     </div>
@@ -506,14 +504,14 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                                 </div>
 
                                 <div className="flex flex-col items-center justify-center gap-1.5 shrink-0 border-l border-slate-100 pl-6 min-w-[80px]">
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); handleEditContract(contract); }} 
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleEditContract(contract); }}
                                     className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl text-[11px] font-black transition-all border border-slate-100 shadow-sm active:scale-95"
                                   >
                                     <Pencil size={14} /> 수정
                                   </button>
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); setDeleteContractTarget(contract); }} 
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setDeleteContractTarget(contract); }}
                                     className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-400 hover:bg-rose-500 hover:text-white rounded-xl text-[11px] font-black transition-all border border-slate-100 shadow-sm active:scale-95"
                                   >
                                     <Trash2 size={14} /> 삭제
@@ -522,20 +520,19 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                               </div>
 
                               {isContractExpanded && (
-                                <div className="p-6 bg-slate-50/40 border-y border-slate-100 pl-16">
+                                <div className="p-4 bg-slate-50/40 border-y border-slate-100 pl-16">
                                   <div className="max-w-6xl mx-auto space-y-4">
                                     <div className="flex items-center justify-between px-1">
                                       <h6 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                         <CalendarDays size={14} /> 결제 마일스톤 상세 내역
                                       </h6>
-                                      <button 
+                                      <button
                                         disabled={metrics.registeredBalance <= 0}
-                                        onClick={(e) => { e.stopPropagation(); setShowPaymentErrors(false); setEditingPayment(null); setPaymentErrorText(null); setIsPaymentModalOpen({ isOpen: true, contractId: contract.id }); }} 
-                                        className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black transition-all border shadow-sm ${
-                                          metrics.registeredBalance <= 0 
-                                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                                        onClick={(e) => { e.stopPropagation(); setShowPaymentErrors(false); setEditingPayment(null); setPaymentErrorText(null); setIsPaymentModalOpen({ isOpen: true, contractId: contract.id }); }}
+                                        className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black transition-all border shadow-sm ${metrics.registeredBalance <= 0
+                                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
                                           : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border-indigo-100 active:scale-95'
-                                        }`}
+                                          }`}
                                       >
                                         <TrendingUp size={14} /> 결제 정보 등록
                                       </button>
@@ -551,7 +548,7 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                                           const isCompletionEditing = quickDateEdit?.id === p.id && quickDateEdit?.field === 'completionDate';
 
                                           return (
-                                            <div key={p.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-wrap lg:flex-nowrap justify-between items-center shadow-sm hover:shadow-md transition-all gap-4">
+                                            <div key={p.id} className="bg-white p-2 rounded-2xl border border-slate-100 flex flex-wrap lg:flex-nowrap justify-between items-center shadow-sm hover:shadow-md transition-all gap-4">
                                               <div className="flex flex-wrap items-center gap-x-10 gap-y-4 flex-1">
                                                 <div className="min-w-[80px]">
                                                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">항목</div>
@@ -574,18 +571,18 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                                                     <div className="text-sm font-bold text-slate-600 font-mono">{p.invoiceDate}</div>
                                                   ) : isInvoiceEditing ? (
                                                     <div className="flex items-center gap-1 mt-1">
-                                                      <input 
+                                                      <input
                                                         autoFocus
-                                                        type="date" 
-                                                        className="px-2 py-1 border rounded text-xs outline-none focus:ring-1 focus:ring-amber-500" 
-                                                        value={quickDateEdit.value} 
-                                                        onChange={(e) => setQuickDateEdit({...quickDateEdit, value: e.target.value})}
+                                                        type="date"
+                                                        className="px-2 py-1 border rounded text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                                                        value={quickDateEdit.value}
+                                                        onChange={(e) => setQuickDateEdit({ ...quickDateEdit, value: e.target.value })}
                                                       />
                                                       <button onClick={() => handleSaveQuickDate(p)} className="p-1 text-emerald-600 bg-emerald-50 rounded hover:bg-emerald-100"><Check size={14} /></button>
                                                       <button onClick={() => setQuickDateEdit(null)} className="p-1 text-slate-400 bg-slate-50 rounded hover:bg-slate-100"><X size={14} /></button>
                                                     </div>
                                                   ) : (
-                                                    <button 
+                                                    <button
                                                       onClick={() => setQuickDateEdit({ id: p.id, field: 'invoiceDate', value: new Date().toISOString().split('T')[0] })}
                                                       className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-lg text-[10px] font-black hover:bg-amber-100 transition-colors border border-amber-100 mt-0.5"
                                                     >
@@ -601,18 +598,18 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                                                       <div className="text-sm font-bold text-slate-600 font-mono">{p.completionDate}</div>
                                                     ) : isCompletionEditing ? (
                                                       <div className="flex items-center gap-1 mt-1">
-                                                        <input 
+                                                        <input
                                                           autoFocus
-                                                          type="date" 
-                                                          className="px-2 py-1 border rounded text-xs outline-none focus:ring-1 focus:ring-emerald-500" 
-                                                          value={quickDateEdit.value} 
-                                                          onChange={(e) => setQuickDateEdit({...quickDateEdit, value: e.target.value})}
+                                                          type="date"
+                                                          className="px-2 py-1 border rounded text-xs outline-none focus:ring-1 focus:ring-emerald-500"
+                                                          value={quickDateEdit.value}
+                                                          onChange={(e) => setQuickDateEdit({ ...quickDateEdit, value: e.target.value })}
                                                         />
                                                         <button onClick={() => handleSaveQuickDate(p)} className="p-1 text-emerald-600 bg-emerald-50 rounded hover:bg-emerald-100"><Check size={14} /></button>
                                                         <button onClick={() => setQuickDateEdit(null)} className="p-1 text-slate-400 bg-slate-50 rounded hover:bg-slate-100"><X size={14} /></button>
                                                       </div>
                                                     ) : p.invoiceDate ? (
-                                                      <button 
+                                                      <button
                                                         onClick={() => setQuickDateEdit({ id: p.id, field: 'completionDate', value: new Date().toISOString().split('T')[0] })}
                                                         className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black hover:bg-emerald-100 transition-colors border border-emerald-100 mt-0.5"
                                                       >
@@ -624,27 +621,26 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                                                   </div>
 
                                                   <div className="pt-4">
-                                                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${
-                                                      p.status === '완료' ? 'bg-emerald-100 text-emerald-700' : 
+                                                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${p.status === '완료' ? 'bg-emerald-100 text-emerald-700' :
                                                       p.status === '청구' ? 'bg-amber-100 text-amber-700' :
-                                                      p.status === '지연' ? 'bg-rose-100 text-rose-700' :
-                                                      'bg-slate-100 text-slate-500'
-                                                    }`}>
+                                                        p.status === '지연' ? 'bg-rose-100 text-rose-700' :
+                                                          'bg-slate-100 text-slate-500'
+                                                      }`}>
                                                       {p.status}
                                                     </span>
                                                   </div>
                                                 </div>
                                               </div>
-                                              
+
                                               <div className="flex flex-col gap-1.5 shrink-0 border-l pl-5 border-slate-100 items-center justify-center min-w-[80px]">
-                                                <button 
-                                                  onClick={() => handleEditPayment(p)} 
+                                                <button
+                                                  onClick={() => handleEditPayment(p)}
                                                   className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl text-xs font-black transition-all border border-slate-100 shadow-sm active:scale-95"
                                                 >
                                                   <Pencil size={14} /> 수정
                                                 </button>
-                                                <button 
-                                                  onClick={() => setDeletePaymentTarget({ paymentId: p.id, contractId: contract.id, itemName: p.item })} 
+                                                <button
+                                                  onClick={() => setDeletePaymentTarget({ paymentId: p.id, contractId: contract.id, itemName: p.item })}
                                                   className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-400 hover:bg-rose-500 hover:text-white rounded-xl text-xs font-black transition-all border border-slate-100 shadow-sm active:scale-95"
                                                 >
                                                   <Trash2 size={14} /> 삭제
@@ -687,16 +683,16 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="계약 명칭" required error={showContractErrors && !newContract.name}>
-                <input required type="text" className={inputClass(showContractErrors && !newContract.name)} value={newContract.name} onChange={e => setNewContract({...newContract, name: e.target.value})} placeholder="공식 계약명 입력" />
+                <input required type="text" className={inputClass(showContractErrors && !newContract.name)} value={newContract.name} onChange={e => setNewContract({ ...newContract, name: e.target.value })} placeholder="공식 계약명 입력" />
               </FormField>
               <FormField label="프로젝트명 (고정)">
                 <div className="w-full px-4 py-3 border border-slate-100 rounded-xl bg-slate-50 text-slate-500 text-sm font-black flex items-center justify-between">
-                   <span>{getProjectName(newContract.projectId || '')}</span>
-                   <Lock size={14} className="text-slate-300" />
+                  <span>{getProjectName(newContract.projectId || '')}</span>
+                  <Lock size={14} className="text-slate-300" />
                 </div>
               </FormField>
               <FormField label="거래처 (연결)" required error={showContractErrors && !newContract.customerId}>
-                <select required className={inputClass(showContractErrors && !newContract.customerId)} value={newContract.customerId || ''} onChange={e => setNewContract({...newContract, customerId: e.target.value})}>
+                <select required className={inputClass(showContractErrors && !newContract.customerId)} value={newContract.customerId || ''} onChange={e => setNewContract({ ...newContract, customerId: e.target.value })}>
                   <option value="">거래처 선택</option>
                   {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -705,13 +701,13 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                 <input required type="text" className={inputClass(showContractErrors && (!newContract.amount || newContract.amount <= 0)) + " font-mono font-black"} value={contractAmountDisplay} onChange={e => handleContractAmountChange(e.target.value)} placeholder="0" />
               </FormField>
               <FormField label="구분" required error={showContractErrors && !newContract.category}>
-                <select required className={inputClass(showContractErrors && !newContract.category)} value={newContract.category} onChange={e => setNewContract({...newContract, category: e.target.value as ContractCategory})}>
+                <select required className={inputClass(showContractErrors && !newContract.category)} value={newContract.category} onChange={e => setNewContract({ ...newContract, category: e.target.value as ContractCategory })}>
                   <option value="매출">매출</option>
                   <option value="매입">매입</option>
                 </select>
               </FormField>
               <FormField label="유형" required error={showContractErrors && !newContract.type}>
-                <select required className={inputClass(showContractErrors && !newContract.type)} value={newContract.type} onChange={e => setNewContract({...newContract, type: e.target.value as ContractType})}>
+                <select required className={inputClass(showContractErrors && !newContract.type)} value={newContract.type} onChange={e => setNewContract({ ...newContract, type: e.target.value as ContractType })}>
                   <option value="개발">개발</option>
                   <option value="유지보수">유지보수</option>
                   <option value="물품">물품</option>
@@ -721,17 +717,17 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
               <FormField label="계약 체결일">
-                <input type="date" className={inputClass(false)} value={newContract.signedDate || ''} onChange={e => setNewContract({...newContract, signedDate: e.target.value})} />
+                <input type="date" className={inputClass(false)} value={newContract.signedDate || ''} onChange={e => setNewContract({ ...newContract, signedDate: e.target.value })} />
               </FormField>
               <FormField label="착수일">
-                <input type="date" className={inputClass(false)} value={newContract.startDate || ''} onChange={e => setNewContract({...newContract, startDate: e.target.value})} />
+                <input type="date" className={inputClass(false)} value={newContract.startDate || ''} onChange={e => setNewContract({ ...newContract, startDate: e.target.value })} />
               </FormField>
               <FormField label="완료 예정일">
-                <input type="date" className={inputClass(false)} value={newContract.endDate || ''} onChange={e => setNewContract({...newContract, endDate: e.target.value})} min={newContract.startDate} />
+                <input type="date" className={inputClass(false)} value={newContract.endDate || ''} onChange={e => setNewContract({ ...newContract, endDate: e.target.value })} min={newContract.startDate} />
               </FormField>
             </div>
             <FormField label="비고">
-              <textarea className={inputClass(false) + " h-20 resize-none"} value={newContract.notes || ''} onChange={e => setNewContract({...newContract, notes: e.target.value})} placeholder="계약 관련 특이사항 입력" />
+              <textarea className={inputClass(false) + " h-20 resize-none"} value={newContract.notes || ''} onChange={e => setNewContract({ ...newContract, notes: e.target.value })} placeholder="계약 관련 특이사항 입력" />
             </FormField>
             <div className="flex justify-end gap-4 pt-6 border-t">
               <button type="button" onClick={() => { setIsContractModalOpen({ isOpen: false }); setContractAmountDisplay(''); setEditingContract(null); setContractErrorText(null); }} className="px-6 py-2.5 font-bold text-slate-500 text-sm">취소</button>
@@ -752,35 +748,35 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="프로젝트 명칭" required error={showProjErrors && !newProject.name}>
-                <input required type="text" className={inputClass(showProjErrors && !newProject.name)} value={newProject.name || ''} onChange={e => setNewProject({...newProject, name: e.target.value})} placeholder="사업명 입력" />
+                <input required type="text" className={inputClass(showProjErrors && !newProject.name)} value={newProject.name || ''} onChange={e => setNewProject({ ...newProject, name: e.target.value })} placeholder="사업명 입력" />
               </FormField>
               <FormField label="발주기관(거래처)" required error={showProjErrors && !newProject.customerId}>
-                <select required className={inputClass(showProjErrors && !newProject.customerId)} value={newProject.customerId || ''} onChange={e => setNewProject({...newProject, customerId: e.target.value})}>
+                <select required className={inputClass(showProjErrors && !newProject.customerId)} value={newProject.customerId || ''} onChange={e => setNewProject({ ...newProject, customerId: e.target.value })}>
                   <option value="">거래처 선택</option>
                   {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </FormField>
               <FormField label="시작일">
-                <input type="date" className={inputClass(false)} value={newProject.startDate || ''} onChange={e => setNewProject({...newProject, startDate: e.target.value})} />
+                <input type="date" className={inputClass(false)} value={newProject.startDate || ''} onChange={e => setNewProject({ ...newProject, startDate: e.target.value })} />
               </FormField>
               <FormField label="종료일">
-                <input type="date" className={inputClass(false)} value={newProject.endDate || ''} onChange={e => setNewProject({...newProject, endDate: e.target.value})} min={newProject.startDate} />
+                <input type="date" className={inputClass(false)} value={newProject.endDate || ''} onChange={e => setNewProject({ ...newProject, endDate: e.target.value })} min={newProject.startDate} />
               </FormField>
               <FormField label="예산액 (숫자만)">
                 <input type="text" className={inputClass(false) + " font-black text-indigo-700 font-mono"} value={budgetDisplay} onChange={e => handleBudgetChange(e.target.value)} placeholder="0" />
               </FormField>
               <FormField label="업무부서명">
-                <input type="text" className={inputClass(false)} value={newProject.deptName || ''} onChange={e => setNewProject({...newProject, deptName: e.target.value})} placeholder="부서명 입력" />
+                <input type="text" className={inputClass(false)} value={newProject.deptName || ''} onChange={e => setNewProject({ ...newProject, deptName: e.target.value })} placeholder="부서명 입력" />
               </FormField>
               <FormField label="실무담당자">
-                <input type="text" className={inputClass(false)} value={newProject.managerName || ''} onChange={e => setNewProject({...newProject, managerName: e.target.value})} placeholder="담당자 성명" />
+                <input type="text" className={inputClass(false)} value={newProject.managerName || ''} onChange={e => setNewProject({ ...newProject, managerName: e.target.value })} placeholder="담당자 성명" />
               </FormField>
               <FormField label="연락처">
-                <input type="text" className={inputClass(false)} value={newProject.managerPhone || ''} onChange={e => setNewProject({...newProject, managerPhone: e.target.value})} placeholder="연락처 입력" />
+                <input type="text" className={inputClass(false)} value={newProject.managerPhone || ''} onChange={e => setNewProject({ ...newProject, managerPhone: e.target.value })} placeholder="연락처 입력" />
               </FormField>
             </div>
             <FormField label="비고">
-              <textarea className={inputClass(false) + " h-24 resize-none"} value={newProject.notes || ''} onChange={e => setNewProject({...newProject, notes: e.target.value})} placeholder="프로젝트 특이사항 입력" />
+              <textarea className={inputClass(false) + " h-24 resize-none"} value={newProject.notes || ''} onChange={e => setNewProject({ ...newProject, notes: e.target.value })} placeholder="프로젝트 특이사항 입력" />
             </FormField>
             <div className="flex justify-end gap-4 pt-6 border-t">
               <button type="button" onClick={() => { setIsProjModalOpen(false); setEditingProject(null); setProjErrorText(null); }} className="px-6 py-2.5 font-bold text-slate-500 hover:bg-slate-100 rounded-xl text-sm transition-colors">취소</button>
@@ -802,28 +798,27 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="계약명 (고정)">
                 <div className="w-full px-4 py-3 border border-slate-100 rounded-xl bg-slate-50 text-slate-500 text-sm font-black flex items-center justify-between">
-                   <span>{getContractName(isPaymentModalOpen.contractId || '')}</span>
-                   <Lock size={14} className="text-slate-300" />
+                  <span>{getContractName(isPaymentModalOpen.contractId || '')}</span>
+                  <Lock size={14} className="text-slate-300" />
                 </div>
               </FormField>
               <FormField label="상태 (자동 변이)">
                 <div className="flex items-center gap-2 py-3 px-1">
-                  <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest ${
-                    calculatePaymentStatus(newPayment as Payment) === '완료' ? 'bg-emerald-100 text-emerald-700' : 
+                  <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest ${calculatePaymentStatus(newPayment as Payment) === '완료' ? 'bg-emerald-100 text-emerald-700' :
                     calculatePaymentStatus(newPayment as Payment) === '청구' ? 'bg-amber-100 text-amber-700' :
-                    calculatePaymentStatus(newPayment as Payment) === '지연' ? 'bg-rose-100 text-rose-700' :
-                    'bg-slate-100 text-slate-500'
-                  }`}>
+                      calculatePaymentStatus(newPayment as Payment) === '지연' ? 'bg-rose-100 text-rose-700' :
+                        'bg-slate-100 text-slate-500'
+                    }`}>
                     {calculatePaymentStatus(newPayment as Payment)}
                   </span>
                   <span className="text-[10px] font-bold text-slate-400">* 날짜 입력에 따라 자동 변경됩니다.</span>
                 </div>
               </FormField>
               <FormField label="결제 항목" required error={showPaymentErrors && !newPayment.item}>
-                <select 
-                  required 
-                  className={inputClass(showPaymentErrors && !newPayment.item)} 
-                  value={newPayment.item} 
+                <select
+                  required
+                  className={inputClass(showPaymentErrors && !newPayment.item)}
+                  value={newPayment.item}
                   onChange={e => handlePaymentItemChange(e.target.value as PaymentItem)}
                 >
                   <option value="선금" disabled={!editingPayment && currentPaymentContract?.contractPayments.some(p => p.item === '선금')}>
@@ -836,14 +831,14 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
               <FormField label="결제 금액" required error={showPaymentErrors && (!newPayment.amount || newPayment.amount <= 0)}>
                 <div className="space-y-1.5">
                   <div className="relative">
-                    <input 
-                      required 
-                      type="text" 
+                    <input
+                      required
+                      type="text"
                       readOnly={newPayment.item === '잔금' && !editingPayment}
-                      className={inputClass(showPaymentErrors && (!newPayment.amount || newPayment.amount <= 0)) + " font-mono font-black " + (newPayment.item === '잔금' && !editingPayment ? 'bg-slate-50 text-indigo-600' : '')} 
-                      value={paymentAmountDisplay} 
-                      onChange={e => handlePaymentAmountChange(e.target.value)} 
-                      placeholder="0" 
+                      className={inputClass(showPaymentErrors && (!newPayment.amount || newPayment.amount <= 0)) + " font-mono font-black " + (newPayment.item === '잔금' && !editingPayment ? 'bg-slate-50 text-indigo-600' : '')}
+                      value={paymentAmountDisplay}
+                      onChange={e => handlePaymentAmountChange(e.target.value)}
+                      placeholder="0"
                     />
                     {newPayment.item === '잔금' && !editingPayment && <Lock size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" />}
                   </div>
@@ -860,13 +855,13 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
               <FormField label="결제 예정일" required error={showPaymentErrors && !newPayment.scheduledDate}>
-                <input required type="date" className={inputClass(showPaymentErrors && !newPayment.scheduledDate)} value={newPayment.scheduledDate || ''} onChange={e => setNewPayment({...newPayment, scheduledDate: e.target.value})} />
+                <input required type="date" className={inputClass(showPaymentErrors && !newPayment.scheduledDate)} value={newPayment.scheduledDate || ''} onChange={e => setNewPayment({ ...newPayment, scheduledDate: e.target.value })} />
               </FormField>
               <FormField label="계산서 발행일">
-                <input type="date" className={inputClass(false)} value={newPayment.invoiceDate || ''} onChange={e => setNewPayment({...newPayment, invoiceDate: e.target.value})} />
+                <input type="date" className={inputClass(false)} value={newPayment.invoiceDate || ''} onChange={e => setNewPayment({ ...newPayment, invoiceDate: e.target.value })} />
               </FormField>
               <FormField label="결제 완료일">
-                <input type="date" className={inputClass(false)} value={newPayment.completionDate || ''} onChange={e => setNewPayment({...newPayment, completionDate: e.target.value})} />
+                <input type="date" className={inputClass(false)} value={newPayment.completionDate || ''} onChange={e => setNewPayment({ ...newPayment, completionDate: e.target.value })} />
               </FormField>
             </div>
             <div className="flex justify-end gap-4 pt-6 border-t">

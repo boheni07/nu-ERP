@@ -350,74 +350,6 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
             <Trash2 size={18} /> 전체 데이터 삭제
           </button>
         </div>
-        {/* NEW: LocalStorage Migration Card */}
-        <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full -mr-20 -mt-20 opacity-40 group-hover:scale-125 transition-transform duration-700"></div>
-          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
-            <Upload size={40} />
-          </div>
-          <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">로컬 데이터 서버 동기화</h3>
-          <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
-            브라우저에 저장된 기존 데이터를 Supabase(서버)로 전송합니다. <span className="text-blue-500 font-bold">로컬 작업 내용을 서버에 반영할 때 사용하세요.</span>
-          </p>
-          <button
-            onClick={() => {
-              const lsData = {
-                customers: JSON.parse(localStorage.getItem('nu_customers') || '[]'),
-                projects: JSON.parse(localStorage.getItem('nu_projects') || '[]'),
-                contracts: JSON.parse(localStorage.getItem('nu_contracts') || '[]'),
-                payments: JSON.parse(localStorage.getItem('nu_payments') || '[]'),
-                users: JSON.parse(localStorage.getItem('nu_users') || '[]'),
-              };
-
-              if (lsData.customers.length === 0 && lsData.projects.length === 0) {
-                setStatus({ type: 'info', message: '동기화할 로컬 데이터가 없습니다.' });
-                return;
-              }
-
-              executeAction([
-                { label: '로컬 스토리지 스캔', weight: 20 },
-                { label: '데이터 정합성 검증', weight: 30 },
-                { label: '클라우드 업로드', weight: 50 }
-              ], () => {
-                onRestore(lsData);
-                setStatus({ type: 'success', message: '로컬 데이터가 서버로 성공적으로 이관되었습니다.' });
-              });
-            }}
-            disabled={isProcessing}
-            className="w-full py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-          >
-            <Upload size={18} /> 로컬 데이터 업로드
-          </button>
-        </div>
-
-        {/* Force Sync Card */}
-        <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-purple-50 rounded-full -mr-20 -mt-20 opacity-40 group-hover:scale-125 transition-transform duration-700"></div>
-          <div className="w-20 h-20 bg-purple-50 text-purple-600 rounded-[2rem] flex items-center justify-center mb-8 group-hover:bg-purple-600 group-hover:text-white transition-all duration-500 shadow-sm">
-            <Upload size={40} />
-          </div>
-          <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">강제 동기화 (Force Sync)</h3>
-          <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
-            현재 화면에 보이는 데이터를 서버(Supabase)에 강제로 덮어씁니다. <span className="text-purple-500 font-bold">동기화 오류가 의심될 때 사용하세요.</span>
-          </p>
-          <button
-            onClick={() => {
-              executeAction([
-                { label: '현재 데이터 스냅샷', weight: 20 },
-                { label: '데이터 무결성 확인', weight: 30 },
-                { label: '서버 강제 동기화', weight: 50 }
-              ], () => {
-                onRestore(data);
-                setStatus({ type: 'success', message: '현재 데이터가 서버에 안전하게 저장되었습니다.' });
-              });
-            }}
-            disabled={isProcessing}
-            className="w-full py-5 bg-purple-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-purple-100 hover:bg-purple-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-          >
-            <Upload size={18} /> 현재 상태 서버 전송
-          </button>
-        </div>
       </div>
 
       {/* 5. Policy Footer */}
@@ -433,7 +365,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
           </p>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

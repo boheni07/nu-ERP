@@ -41,7 +41,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
           <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-500 rounded-full blur-[120px]"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-rose-500 rounded-full blur-[100px]"></div>
         </div>
-        
+
         <div className="relative z-10 max-w-lg">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -57,7 +57,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
             계약 관리부터 AI 기반 재무 분석까지,<br />
             스마트한 기업 운영을 위한 통합 ERP 솔루션입니다.
           </p>
-          
+
           <div className="mt-12 grid grid-cols-2 gap-6">
             <div className="p-6 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-sm">
               <div className="text-indigo-400 font-black text-2xl mb-1 tracking-tighter">100%</div>
@@ -69,7 +69,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
             </div>
           </div>
         </div>
-        
+
         {/* Abstract Background Element */}
         <div className="absolute bottom-0 left-0 p-8 opacity-10">
           <div className="text-[12rem] font-black text-white leading-none tracking-tighter select-none">NU</div>
@@ -158,12 +158,9 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
           </form>
 
           <div className="pt-10 border-t border-slate-100 text-center">
-             <div className="bg-slate-50 p-4 rounded-2xl inline-block">
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Demo Credentials</p>
-                <code className="text-xs font-bold text-slate-600">ID: admin / PW: password123</code>
-             </div>
+            {/* Demo Credentials removed */}
           </div>
-          
+
           <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
             © 2025 nu-ERP Smart Systems. All rights reserved.
           </p>
