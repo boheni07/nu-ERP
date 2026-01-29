@@ -368,8 +368,8 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
             const projectStatus = calculateProjectStatus(proj, projContracts);
 
             return (
-              <div key={proj.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all hover:border-indigo-200">
-                <div className={`p-3.5 flex items-center gap-6 cursor-pointer hover:bg-slate-50/80 transition-colors ${isExpanded ? 'bg-indigo-50/30' : ''}`} onClick={() => toggleProject(proj.id)}>
+              <div key={proj.id} className={`bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all hover:border-indigo-200 ${isExpanded ? 'ring-2 ring-indigo-500/20' : ''}`}>
+                <div className={`p-3.5 flex items-center gap-6 cursor-pointer hover:bg-slate-50/80 transition-colors ${isExpanded ? 'bg-indigo-100' : ''}`} onClick={() => toggleProject(proj.id)}>
                   <div className="text-indigo-400 shrink-0">
                     {isExpanded ? <ChevronDown size={24} className="text-indigo-600" /> : <ChevronRight size={24} />}
                   </div>
@@ -454,7 +454,7 @@ const ProjectContractManager: React.FC<ProjectContractManagerProps> = ({
                           return (
                             <div key={contract.id} className="border-l-[6px] border-slate-100 hover:border-indigo-300 transition-all bg-white">
                               <div
-                                className={`p-3.5 pl-6 flex items-center gap-6 cursor-pointer transition-colors ${isContractExpanded ? 'bg-indigo-50/5' : 'hover:bg-slate-50/50'}`}
+                                className={`p-3.5 pl-6 flex items-center gap-6 cursor-pointer transition-colors ${isContractExpanded ? 'bg-indigo-50' : 'hover:bg-slate-50/50'}`}
                                 onClick={() => toggleContract(contract.id)}
                               >
                                 <div className="shrink-0 text-slate-300">
