@@ -134,7 +134,6 @@ export const calculateContractMetrics = (contract: Contract, payments: Payment[]
     accumulatedPayment,
     balance: contract.amount - accumulatedPayment,
     registeredBalance: contract.amount - totalRegisteredAmount,
-    status: calculateContractStatus(contract, updatedPayments),
-    updatedPayments
+    status: calculateContractStatus(contract, updatedPayments)
   };
 };

@@ -39,6 +39,80 @@ export const apiService = {
   // 현재 앱 구조상 전체 리스트를 받아오므로, 차집합을 계산해 삭제하는 로직이 필요함.
   // 간단한 마이그레이션을 위해, 통째로 upsert 후 없는 것은 delete 하는 방식 채택.
 
+  // --- Granular Operations (Optimized) ---
+
+  // Customers
+  createCustomer: async (customer: Customer) => {
+    const { error } = await supabase.from('customers').insert(customer);
+    if (error) throw error;
+  },
+  updateCustomer: async (customer: Customer) => {
+    const { error } = await supabase.from('customers').update(customer).eq('id', customer.id);
+    if (error) throw error;
+  },
+  deleteCustomer: async (id: string) => {
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Projects
+  createProject: async (project: Project) => {
+    const { error } = await supabase.from('projects').insert(project);
+    if (error) throw error;
+  },
+  updateProject: async (project: Project) => {
+    const { error } = await supabase.from('projects').update(project).eq('id', project.id);
+    if (error) throw error;
+  },
+  deleteProject: async (id: string) => {
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Contracts
+  createContract: async (contract: Contract) => {
+    const { error } = await supabase.from('contracts').insert(contract);
+    if (error) throw error;
+  },
+  updateContract: async (contract: Contract) => {
+    const { error } = await supabase.from('contracts').update(contract).eq('id', contract.id);
+    if (error) throw error;
+  },
+  deleteContract: async (id: string) => {
+    const { error } = await supabase.from('contracts').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Payments
+  createPayment: async (payment: Payment) => {
+    const { error } = await supabase.from('payments').insert(payment);
+    if (error) throw error;
+  },
+  updatePayment: async (payment: Payment) => {
+    const { error } = await supabase.from('payments').update(payment).eq('id', payment.id);
+    if (error) throw error;
+  },
+  deletePayment: async (id: string) => {
+    const { error } = await supabase.from('payments').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Users
+  createUser: async (user: User) => {
+    const { error } = await supabase.from('app_users').insert(user);
+    if (error) throw error;
+  },
+  updateUser: async (user: User) => {
+    const { error } = await supabase.from('app_users').update(user).eq('id', user.id);
+    if (error) throw error;
+  },
+  deleteUser: async (id: string) => {
+    const { error } = await supabase.from('app_users').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- Bulk Operations (Legacy/Restore) ---
+
   saveCustomers: async (data: Customer[]) => {
     if (data.length === 0) {
       await supabase.from('customers').delete().neq('id', '0');
@@ -99,3 +173,4 @@ export const apiService = {
     await supabase.from('app_users').delete().not('id', 'in', currentIds);
   }
 };
+
