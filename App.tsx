@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -46,7 +46,7 @@ const App: React.FC = () => {
         setProjects(data.projects);
         setContracts(data.contracts);
         setPayments(data.payments);
-        
+
         // 유저 데이터가 비어있으면 샘플 유저 로드
         if (data.users.length === 0) {
           setUsers(SAMPLE_USERS);
@@ -90,19 +90,26 @@ const App: React.FC = () => {
   // 현재 사용자 계정 정보 업데이트
   const updateCurrentUser = (updated: User) => {
     const nextUsers = users.map(u => u.id === updated.id ? updated : u);
-    
+
     setIsSyncing(true);
     setCurrentUser(updated);
     setUsers(nextUsers);
-    
+
     // 로컬 세션 정보 갱신
     localStorage.setItem('nu_erp_session', JSON.stringify(updated));
-    
+
     // DBMS 동기화
-    apiService.saveUsers(nextUsers).then(() => {
-      setIsSyncing(false);
-      logActivity({ type: 'UPDATE', category: 'USER', targetName: updated.name, description: '본인의 계정 정보를 수정했습니다.' });
-    });
+    apiService.saveUsers(nextUsers)
+      .then(() => {
+        logActivity({ type: 'UPDATE', category: 'USER', targetName: updated.name, description: '본인의 계정 정보를 수정했습니다.' });
+      })
+      .catch(err => {
+        console.error("Failed to sync user update:", err);
+        alert("데이터 동기화 실패 (User Update)");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   // 상태 변경 시 DB 동기화 헬퍼
@@ -126,28 +133,70 @@ const App: React.FC = () => {
     setContracts(data.contracts || []);
     setPayments(data.payments || []);
     setUsers(data.users || []);
-    
-    await Promise.all([
-      apiService.saveCustomers(data.customers || []),
-      apiService.saveProjects(data.projects || []),
-      apiService.saveContracts(data.contracts || []),
-      apiService.savePayments(data.payments || []),
-      apiService.saveUsers(data.users || [])
-    ]);
-    setIsSyncing(false);
-    logActivity({ type: 'SYSTEM', category: 'USER', targetName: 'Database', description: '데이터를 복원했습니다.' });
+
+    try {
+      // 순차적으로 저장하며 고아 데이터(Orphan Data) 제거
+      await apiService.saveUsers(data.users || []);
+      await apiService.saveCustomers(data.customers || []);
+
+      const validProjects = data.projects || [];
+      await apiService.saveProjects(validProjects);
+
+      // 프로젝트가 존재하는 계약만 필터링 (String 변환 비교)
+      const projectIds = validProjects.map((p: Project) => String(p.id));
+      const validContracts = (data.contracts || []).filter((c: Contract) => projectIds.includes(String(c.projectId)));
+
+      const droppedContracts = (data.contracts || []).length - validContracts.length;
+      if (droppedContracts > 0) {
+        console.warn(`Dropped ${droppedContracts} orphan contracts`);
+        if (validContracts.length === 0 && (data.contracts || []).length > 0) {
+          throw new Error(`계약 정보 ${droppedContracts}건이 프로젝트와 연결되지 않아 복원할 수 없습니다. (프로젝트 ID 불일치)`);
+        }
+      }
+
+      // [Fix] DB 스키마에 없는 'updatedPayments' 필드 제거 및 스냅샷 데이터 정제
+      const sanitizedContracts = validContracts.map((c: any) => {
+        const { updatedPayments, ...rest } = c;
+        return rest;
+      });
+
+      await apiService.saveContracts(sanitizedContracts);
+
+      // 계약이 존재하는 결제만 필터링 (String 변환 비교)
+      const contractIds = validContracts.map((c: Contract) => String(c.id));
+      const validPayments = (data.payments || []).filter((p: Payment) => contractIds.includes(String(p.contractId)));
+
+      const droppedPayments = (data.payments || []).length - validPayments.length;
+      if (droppedPayments > 0) {
+        console.warn(`Dropped ${droppedPayments} orphan payments`);
+        if (validPayments.length === 0 && (data.payments || []).length > 0) {
+          throw new Error(`결제 정보 ${droppedPayments}건이 계약 정보와 연결되지 않아 복원할 수 없습니다.`);
+        }
+      }
+
+
+
+      await apiService.savePayments(validPayments);
+
+      logActivity({ type: 'SYSTEM', category: 'USER', targetName: 'Database', description: '데이터를 복원했습니다.' });
+    } catch (err: any) {
+      console.error("Restore failed:", err);
+      alert(`데이터 복원 실패: ${err.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleInitSampleData = async () => {
     setIsSyncing(true);
-    
+
     // 1. 상태 업데이트
     setCustomers(SAMPLE_CUSTOMERS);
     setProjects(SAMPLE_PROJECTS);
     setContracts(SAMPLE_CONTRACTS);
     setPayments(SAMPLE_PAYMENTS);
     setUsers(SAMPLE_USERS);
-    
+
     // 2. 비동기 DB 저장
     try {
       await Promise.all([
@@ -161,7 +210,7 @@ const App: React.FC = () => {
       console.error("Sample data init failed", err);
     } finally {
       setIsSyncing(false);
-      setActiveTab('dashboard'); 
+      setActiveTab('dashboard');
       logActivity({ type: 'SYSTEM', category: 'USER', targetName: 'Sample Data', description: '표준 데이터를 로드했습니다.' });
     }
   };
@@ -192,16 +241,23 @@ const App: React.FC = () => {
     setProjects(nextProj);
     setContracts(nextCont);
     setPayments(nextPay);
-    
+
     Promise.all([
       apiService.saveCustomers(nextCust),
       apiService.saveProjects(nextProj),
       apiService.saveContracts(nextCont),
       apiService.savePayments(nextPay)
-    ]).then(() => {
-      setIsSyncing(false);
-      if (target) logActivity({ type: 'DELETE', category: 'CUSTOMER', targetName: target.name, description: '거래처 및 관련 데이터를 삭제했습니다.' });
-    });
+    ])
+      .then(() => {
+        if (target) logActivity({ type: 'DELETE', category: 'CUSTOMER', targetName: target.name, description: '거래처 및 관련 데이터를 삭제했습니다.' });
+      })
+      .catch(err => {
+        console.error("Delete customer failed:", err);
+        alert("삭제 작업 동기화 실패. 새로고침 후 다시 시도하세요.");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   const addProject = (project: Project) => {
@@ -232,10 +288,17 @@ const App: React.FC = () => {
       apiService.saveProjects(nextProj),
       apiService.saveContracts(nextCont),
       apiService.savePayments(nextPay)
-    ]).then(() => {
-      setIsSyncing(false);
-      if (target) logActivity({ type: 'DELETE', category: 'PROJECT', targetName: target.name, description: '프로젝트를 삭제했습니다.' });
-    });
+    ])
+      .then(() => {
+        if (target) logActivity({ type: 'DELETE', category: 'PROJECT', targetName: target.name, description: '프로젝트를 삭제했습니다.' });
+      })
+      .catch(err => {
+        console.error("Delete project failed:", err);
+        alert("삭제 작업 동기화 실패");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   const addContract = (contract: Contract) => {
@@ -262,10 +325,17 @@ const App: React.FC = () => {
     Promise.all([
       apiService.saveContracts(nextCont),
       apiService.savePayments(nextPay)
-    ]).then(() => {
-      setIsSyncing(false);
-      if (target) logActivity({ type: 'DELETE', category: 'CONTRACT', targetName: target.name, description: '계약을 파기했습니다.' });
-    });
+    ])
+      .then(() => {
+        if (target) logActivity({ type: 'DELETE', category: 'CONTRACT', targetName: target.name, description: '계약을 파기했습니다.' });
+      })
+      .catch(err => {
+        console.error("Delete contract failed:", err);
+        alert("삭제 작업 동기화 실패");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   const addPayment = (payment: Payment) => {
@@ -284,10 +354,17 @@ const App: React.FC = () => {
     Promise.all([
       apiService.savePayments(nextPay),
       apiService.saveContracts(nextCont)
-    ]).then(() => {
-      setIsSyncing(false);
-      logActivity({ type: 'CREATE', category: 'PAYMENT', targetName: payment.item, description: '결제 마일스톤을 추가했습니다.' });
-    });
+    ])
+      .then(() => {
+        logActivity({ type: 'CREATE', category: 'PAYMENT', targetName: payment.item, description: '결제 마일스톤을 추가했습니다.' });
+      })
+      .catch(err => {
+        console.error("Add payment failed:", err);
+        alert("결제 추가 실패");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   const updatePayment = (updated: Payment) => {
@@ -342,10 +419,17 @@ const App: React.FC = () => {
     Promise.all([
       apiService.savePayments(nextPayments),
       apiService.saveContracts(nextCont)
-    ]).then(() => {
-      setIsSyncing(false);
-      logActivity({ type: 'UPDATE', category: 'PAYMENT', targetName: updated.item, description: `결제 상태를 [${updated.status}]로 업데이트했습니다.` });
-    });
+    ])
+      .then(() => {
+        logActivity({ type: 'UPDATE', category: 'PAYMENT', targetName: updated.item, description: `결제 상태를 [${updated.status}]로 업데이트했습니다.` });
+      })
+      .catch(err => {
+        console.error("Update payment failed:", err);
+        alert("결제 업데이트 실패");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   const deletePayment = (paymentId: string, contractId: string) => {
@@ -365,10 +449,17 @@ const App: React.FC = () => {
     Promise.all([
       apiService.savePayments(nextPay),
       apiService.saveContracts(nextCont)
-    ]).then(() => {
-      setIsSyncing(false);
-      if (target) logActivity({ type: 'DELETE', category: 'PAYMENT', targetName: target.item, description: '결제 내역을 삭제했습니다.' });
-    });
+    ])
+      .then(() => {
+        if (target) logActivity({ type: 'DELETE', category: 'PAYMENT', targetName: target.item, description: '결제 내역을 삭제했습니다.' });
+      })
+      .catch(err => {
+        console.error("Delete payment failed:", err);
+        alert("결제 삭제 실패");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   const addUser = (user: User) => {
@@ -405,11 +496,11 @@ const App: React.FC = () => {
   }
 
   return (
-    <Layout 
-      activeTab={activeTab} 
-      setActiveTab={setActiveTab} 
-      currentUser={currentUser} 
-      onLogout={handleLogout} 
+    <Layout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      currentUser={currentUser}
+      onLogout={handleLogout}
       activities={activities}
       onUpdateCurrentUser={updateCurrentUser}
     >

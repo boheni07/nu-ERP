@@ -1,52 +1,101 @@
 
 import { Customer, Project, Contract, Payment, User } from '../types';
+import { supabase } from '../lib/supabase';
 
 /**
- * 이 서비스는 실제 운영 단계에서 fetch('/api/...') 호출로 대체됩니다.
- * 지금은 DBMS 통신 과정을 시뮬레이션하기 위해 비동기(Promise)로 처리합니다.
+ * Supabase를 사용한 실제 데이터 서비스
  */
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const getStorage = (key: string) => JSON.parse(localStorage.getItem(key) || '[]');
-const setStorage = (key: string, data: any) => localStorage.setItem(key, JSON.stringify(data));
-
 export const apiService = {
   // GET: 데이터 전체 조회
   fetchAllData: async () => {
-    await delay(600); // 네트워크 지연 시뮬레이션
+    // 병렬로 모든 테이블 데이터 조회
+    const [
+      { data: customers },
+      { data: projects },
+      { data: contracts },
+      { data: payments },
+      { data: users },
+    ] = await Promise.all([
+      supabase.from('customers').select('*'),
+      supabase.from('projects').select('*'),
+      supabase.from('contracts').select('*'),
+      supabase.from('payments').select('*'),
+      supabase.from('app_users').select('*'),
+    ]);
+
     return {
-      customers: getStorage('nu_customers'),
-      projects: getStorage('nu_projects'),
-      contracts: getStorage('nu_contracts'),
-      payments: getStorage('nu_payments'),
-      users: getStorage('nu_users'),
+      customers: (customers || []) as Customer[],
+      projects: (projects || []) as Project[],
+      contracts: (contracts || []) as Contract[],
+      payments: (payments || []) as Payment[],
+      users: (users || []) as User[],
     };
   },
 
-  // POST/PUT/DELETE: 각 도메인별 처리
+  // POST/PUT: 데이터 저장 (Upsert 전략)
+  // 현재 앱 구조상 전체 리스트를 받아오므로, 차집합을 계산해 삭제하는 로직이 필요함.
+  // 간단한 마이그레이션을 위해, 통째로 upsert 후 없는 것은 delete 하는 방식 채택.
+
   saveCustomers: async (data: Customer[]) => {
-    await delay(300);
-    setStorage('nu_customers', data);
+    if (data.length === 0) {
+      await supabase.from('customers').delete().neq('id', '0');
+      return;
+    }
+    const { error } = await supabase.from('customers').upsert(data);
+    if (error) throw error;
+
+    const currentIds = data.map(d => d.id);
+    await supabase.from('customers').delete().not('id', 'in', currentIds);
   },
 
   saveProjects: async (data: Project[]) => {
-    await delay(300);
-    setStorage('nu_projects', data);
+    if (data.length === 0) {
+      await supabase.from('projects').delete().neq('id', '0');
+      return;
+    }
+    const { error } = await supabase.from('projects').upsert(data);
+    if (error) throw error;
+
+    const currentIds = data.map(d => d.id);
+    await supabase.from('projects').delete().not('id', 'in', currentIds);
   },
 
   saveContracts: async (data: Contract[]) => {
-    await delay(300);
-    setStorage('nu_contracts', data);
+    if (data.length === 0) {
+      await supabase.from('contracts').delete().neq('id', '0');
+      return;
+    }
+    const { error } = await supabase.from('contracts').upsert(data);
+    if (error) throw error;
+
+    const currentIds = data.map(d => d.id);
+    await supabase.from('contracts').delete().not('id', 'in', currentIds);
   },
 
   savePayments: async (data: Payment[]) => {
-    await delay(300);
-    setStorage('nu_payments', data);
+    if (data.length === 0) {
+      await supabase.from('payments').delete().neq('id', '0');
+      return;
+    }
+    const { error } = await supabase.from('payments').upsert(data);
+    if (error) throw error;
+
+    const currentIds = data.map(d => d.id);
+    await supabase.from('payments').delete().not('id', 'in', currentIds);
   },
 
   saveUsers: async (data: User[]) => {
-    await delay(300);
-    setStorage('nu_users', data);
+    if (data.length === 0) {
+      await supabase.from('app_users').delete().neq('id', '0');
+      return;
+    }
+    const { error } = await supabase.from('app_users').upsert(data);
+    if (error) throw error;
+
+    const currentIds = data.map(d => d.id);
+    await supabase.from('app_users').delete().not('id', 'in', currentIds);
   }
 };

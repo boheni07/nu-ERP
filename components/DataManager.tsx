@@ -24,7 +24,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
-  
+
   // 커스텀 확인 모달 상태
   const [pendingAction, setPendingAction] = useState<ActionType>(null);
   const [restoreFile, setRestoreFile] = useState<any>(null);
@@ -32,7 +32,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
   /**
    * 단계별 진행 상황 시뮬레이션 및 실제 액션 실행
    */
-  const executeAction = async (steps: { label: string, weight: number }[], finalAction: () => void) => {
+  const executeAction = async (steps: { label: string, weight: number }[], finalAction: () => void | Promise<void>) => {
     setPendingAction(null);
     setIsProcessing(true);
     setProgress(0);
@@ -43,7 +43,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
       setCurrentStep(step.label);
       const subSteps = 8;
       const increment = step.weight / subSteps;
-      
+
       for (let i = 0; i < subSteps; i++) {
         await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 50));
         currentProgress += increment;
@@ -54,11 +54,11 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
     // 실제 비즈니스 로직 수행
     setCurrentStep('최종 데이터베이스 동기화 중...');
     await new Promise(resolve => setTimeout(resolve, 400));
-    finalAction();
-    
+    await finalAction();
+
     setProgress(100);
     setCurrentStep('작업이 완료되었습니다.');
-    
+
     setTimeout(() => {
       setIsProcessing(false);
       setProgress(0);
@@ -80,14 +80,14 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        
+
         link.href = url;
         link.download = `nu-erp-backup-${timestamp}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
+
         setStatus({ type: 'success', message: '백업 파일이 안전하게 생성되었습니다.' });
       } catch (err) {
         setStatus({ type: 'error', message: '백업 파일 생성 중 오류가 발생했습니다.' });
@@ -156,7 +156,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* 1. 진행 상태 오버레이 (Progress Bar) */}
       {isProcessing && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-2xl z-[100] flex items-center justify-center p-6">
@@ -170,7 +170,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
                 <span className="font-black text-slate-900 text-4xl font-mono tracking-tighter">{Math.round(progress)}%</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <h3 className="text-3xl font-black text-slate-900 tracking-tight">Processing...</h3>
               <div className="flex items-center justify-center gap-3 px-8 py-3 bg-indigo-50 text-indigo-600 rounded-full w-fit mx-auto border border-indigo-100">
@@ -184,7 +184,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
                 <div className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 h-full rounded-full transition-all duration-300 ease-out shadow-lg" style={{ width: `${progress}%` }}></div>
               </div>
               <p className="text-[11px] text-slate-400 font-bold leading-relaxed px-6">
-                시스템 데이터 정합성을 위해 브라우저를 닫거나 새로고침하지 마십시오.<br/>
+                시스템 데이터 정합성을 위해 브라우저를 닫거나 새로고침하지 마십시오.<br />
                 안전한 저장을 위해 프로세스가 마무리될 때까지 대기해주세요.
               </p>
             </div>
@@ -197,48 +197,46 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[90] flex items-center justify-center p-6">
           <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-200">
             <div className="p-10 text-center space-y-6">
-              <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto ${
-                pendingAction === 'RESET' ? 'bg-rose-50 text-rose-600' : 
-                pendingAction === 'RESTORE' ? 'bg-amber-50 text-amber-600' : 
-                'bg-indigo-50 text-indigo-600'
-              }`}>
+              <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto ${pendingAction === 'RESET' ? 'bg-rose-50 text-rose-600' :
+                pendingAction === 'RESTORE' ? 'bg-amber-50 text-amber-600' :
+                  'bg-indigo-50 text-indigo-600'
+                }`}>
                 <ShieldAlert size={40} />
               </div>
-              
+
               <div className="space-y-2">
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">
                   {pendingAction === 'BACKUP' ? '데이터 백업을 시작할까요?' :
-                   pendingAction === 'RESTORE' ? '데이터 복원을 시작할까요?' :
-                   pendingAction === 'RESET' ? '전체 초기화를 진행할까요?' :
-                   '샘플 데이터를 로드할까요?'}
+                    pendingAction === 'RESTORE' ? '데이터 복원을 시작할까요?' :
+                      pendingAction === 'RESET' ? '전체 초기화를 진행할까요?' :
+                        '샘플 데이터를 로드할까요?'}
                 </h3>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed px-4">
                   {pendingAction === 'RESET' ? '이 작업은 취소할 수 없습니다. 모든 기존 데이터가 영구적으로 삭제되고 초기 상태로 돌아갑니다.' :
-                   pendingAction === 'RESTORE' ? '현재 시스템의 모든 데이터가 백업 파일의 내용으로 교체됩니다. 기존 데이터는 모두 소멸됩니다.' :
-                   pendingAction === 'SAMPLE' ? '시연용 데이터셋을 구성합니다. 현재 작업 중인 데이터는 모두 삭제됩니다.' :
-                   '현재 시스템의 실시간 스냅샷을 생성하여 안전한 JSON 파일로 저장합니다.'}
+                    pendingAction === 'RESTORE' ? '현재 시스템의 모든 데이터가 백업 파일의 내용으로 교체됩니다. 기존 데이터는 모두 소멸됩니다.' :
+                      pendingAction === 'SAMPLE' ? '시연용 데이터셋을 구성합니다. 현재 작업 중인 데이터는 모두 삭제됩니다.' :
+                        '현재 시스템의 실시간 스냅샷을 생성하여 안전한 JSON 파일로 저장합니다.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-4">
-                <button 
+                <button
                   onClick={() => { setPendingAction(null); setRestoreFile(null); }}
                   className="py-4 rounded-2xl border border-slate-200 text-slate-600 font-black text-sm hover:bg-slate-50 transition-all"
                 >
                   취소
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     if (pendingAction === 'BACKUP') handleBackupRequest();
                     else if (pendingAction === 'RESTORE') handleRestoreExecute();
                     else if (pendingAction === 'RESET') handleResetExecute();
                     else if (pendingAction === 'SAMPLE') handleSampleExecute();
                   }}
-                  className={`py-4 rounded-2xl text-white font-black text-sm shadow-lg transition-all active:scale-95 ${
-                    pendingAction === 'RESET' ? 'bg-rose-600 shadow-rose-100 hover:bg-rose-700' :
+                  className={`py-4 rounded-2xl text-white font-black text-sm shadow-lg transition-all active:scale-95 ${pendingAction === 'RESET' ? 'bg-rose-600 shadow-rose-100 hover:bg-rose-700' :
                     pendingAction === 'RESTORE' ? 'bg-amber-500 shadow-amber-100 hover:bg-amber-600' :
-                    'bg-indigo-600 shadow-indigo-100 hover:bg-indigo-700'
-                  }`}
+                      'bg-indigo-600 shadow-indigo-100 hover:bg-indigo-700'
+                    }`}
                 >
                   실행 확인
                 </button>
@@ -250,23 +248,21 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
 
       {/* 3. 상태 알림 배너 */}
       {status && (
-        <div className={`p-6 rounded-[2rem] border flex items-center gap-5 animate-in slide-in-from-top duration-300 shadow-xl ${
-          status.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
+        <div className={`p-6 rounded-[2rem] border flex items-center gap-5 animate-in slide-in-from-top duration-300 shadow-xl ${status.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
           status.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-800' :
-          'bg-indigo-50 border-indigo-100 text-indigo-800'
-        }`}>
-          <div className={`p-3 rounded-2xl ${
-            status.type === 'success' ? 'bg-emerald-500 text-white' : 
-            status.type === 'error' ? 'bg-rose-500 text-white' : 
-            'bg-indigo-500 text-white'
+            'bg-indigo-50 border-indigo-100 text-indigo-800'
           }`}>
+          <div className={`p-3 rounded-2xl ${status.type === 'success' ? 'bg-emerald-500 text-white' :
+            status.type === 'error' ? 'bg-rose-500 text-white' :
+              'bg-indigo-500 text-white'
+            }`}>
             {status.type === 'success' ? <CheckCircle size={24} /> : status.type === 'error' ? <AlertTriangle size={24} /> : <Info size={24} />}
           </div>
           <div className="flex-1">
             <h4 className="font-black text-xs uppercase tracking-widest mb-0.5 opacity-60">System Notification</h4>
             <p className="text-sm font-bold tracking-tight">{status.message}</p>
           </div>
-          <button onClick={() => setStatus(null)} className="p-2 hover:bg-black/5 rounded-full transition-all"><X size={20}/></button>
+          <button onClick={() => setStatus(null)} className="p-2 hover:bg-black/5 rounded-full transition-all"><X size={20} /></button>
         </div>
       )}
 
@@ -282,7 +278,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
           <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
             현재 시스템에 저장된 모든 정보(거래처, 프로젝트, 계약, 결제, 사용자)를 안전한 JSON 파일로 패키징합니다.
           </p>
-          <button 
+          <button
             onClick={() => setPendingAction('BACKUP')}
             disabled={isProcessing}
             className="w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
@@ -301,14 +297,14 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
           <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
             기존에 백업된 파일을 업로드하여 데이터를 원상 복구합니다. <span className="text-rose-500 font-black underline decoration-rose-100 underline-offset-4">현재 저장된 모든 데이터는 영구 삭제됩니다.</span>
           </p>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleRestoreFileSelect} 
-            accept=".json" 
-            className="hidden" 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleRestoreFileSelect}
+            accept=".json"
+            className="hidden"
           />
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isProcessing}
             className="w-full py-5 bg-amber-500 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-amber-100 hover:bg-amber-600 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
@@ -327,7 +323,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
           <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
             시스템 학습 및 시연을 위한 표준 데이터셋을 구성합니다. 다양한 시나리오를 즉시 확인해볼 수 있습니다.
           </p>
-          <button 
+          <button
             onClick={() => setPendingAction('SAMPLE')}
             disabled={isProcessing}
             className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
@@ -346,12 +342,80 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
           <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
             데이터베이스를 클린 상태로 비웁니다. 모든 입력된 프로젝트와 금융 정보가 소멸되므로 주의하십시오.
           </p>
-          <button 
+          <button
             onClick={() => setPendingAction('RESET')}
             disabled={isProcessing}
             className="w-full py-5 border-2 border-rose-100 text-rose-600 rounded-[1.5rem] font-black text-sm hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
           >
             <Trash2 size={18} /> 전체 데이터 삭제
+          </button>
+        </div>
+        {/* NEW: LocalStorage Migration Card */}
+        <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full -mr-20 -mt-20 opacity-40 group-hover:scale-125 transition-transform duration-700"></div>
+          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
+            <Upload size={40} />
+          </div>
+          <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">로컬 데이터 서버 동기화</h3>
+          <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
+            브라우저에 저장된 기존 데이터를 Supabase(서버)로 전송합니다. <span className="text-blue-500 font-bold">로컬 작업 내용을 서버에 반영할 때 사용하세요.</span>
+          </p>
+          <button
+            onClick={() => {
+              const lsData = {
+                customers: JSON.parse(localStorage.getItem('nu_customers') || '[]'),
+                projects: JSON.parse(localStorage.getItem('nu_projects') || '[]'),
+                contracts: JSON.parse(localStorage.getItem('nu_contracts') || '[]'),
+                payments: JSON.parse(localStorage.getItem('nu_payments') || '[]'),
+                users: JSON.parse(localStorage.getItem('nu_users') || '[]'),
+              };
+
+              if (lsData.customers.length === 0 && lsData.projects.length === 0) {
+                setStatus({ type: 'info', message: '동기화할 로컬 데이터가 없습니다.' });
+                return;
+              }
+
+              executeAction([
+                { label: '로컬 스토리지 스캔', weight: 20 },
+                { label: '데이터 정합성 검증', weight: 30 },
+                { label: '클라우드 업로드', weight: 50 }
+              ], () => {
+                onRestore(lsData);
+                setStatus({ type: 'success', message: '로컬 데이터가 서버로 성공적으로 이관되었습니다.' });
+              });
+            }}
+            disabled={isProcessing}
+            className="w-full py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+          >
+            <Upload size={18} /> 로컬 데이터 업로드
+          </button>
+        </div>
+
+        {/* Force Sync Card */}
+        <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-purple-50 rounded-full -mr-20 -mt-20 opacity-40 group-hover:scale-125 transition-transform duration-700"></div>
+          <div className="w-20 h-20 bg-purple-50 text-purple-600 rounded-[2rem] flex items-center justify-center mb-8 group-hover:bg-purple-600 group-hover:text-white transition-all duration-500 shadow-sm">
+            <Upload size={40} />
+          </div>
+          <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">강제 동기화 (Force Sync)</h3>
+          <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
+            현재 화면에 보이는 데이터를 서버(Supabase)에 강제로 덮어씁니다. <span className="text-purple-500 font-bold">동기화 오류가 의심될 때 사용하세요.</span>
+          </p>
+          <button
+            onClick={() => {
+              executeAction([
+                { label: '현재 데이터 스냅샷', weight: 20 },
+                { label: '데이터 무결성 확인', weight: 30 },
+                { label: '서버 강제 동기화', weight: 50 }
+              ], () => {
+                onRestore(data);
+                setStatus({ type: 'success', message: '현재 데이터가 서버에 안전하게 저장되었습니다.' });
+              });
+            }}
+            disabled={isProcessing}
+            className="w-full py-5 bg-purple-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-purple-100 hover:bg-purple-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+          >
+            <Upload size={18} /> 현재 상태 서버 전송
           </button>
         </div>
       </div>
