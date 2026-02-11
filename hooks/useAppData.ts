@@ -59,13 +59,6 @@ export const useAppData = () => {
                 } else {
                     setUsers(data.users);
                 }
-
-                const savedUser = localStorage.getItem('nu_erp_session');
-                if (savedUser) {
-                    const user = JSON.parse(savedUser);
-                    setCurrentUser(user);
-                    logActivity({ type: 'LOGIN', category: 'USER', targetName: user.name, description: '시스템에 접속했습니다.' });
-                }
             } catch (err) {
                 console.error("Failed to load data:", err);
             } finally {
@@ -73,7 +66,7 @@ export const useAppData = () => {
             }
         };
         initApp();
-    }, [logActivity]);
+    }, []);
 
     // --- Auth Handlers ---
 
