@@ -14,11 +14,48 @@ interface AIBriefingProps {
 const AIBriefing: React.FC<AIBriefingProps> = (data) => {
   const [briefing, setBriefing] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [lastGenerated, setLastGenerated] = useState<string | null>(null);
 
-  const fetchBriefing = async () => {
+  const fetchBriefing = async (force = false) => {
+    // 1. Check Cache
+    const cached = localStorage.getItem('nu_erp_ai_briefing');
+    if (cached && !force) {
+      const { text, timestamp } = JSON.parse(cached);
+
+      const lastDate = new Date(timestamp);
+      const now = new Date();
+
+      // Target: Today at 09:00 AM
+      const threshold = new Date();
+      threshold.setHours(9, 0, 0, 0);
+
+      // Logical Check:
+      // If now is past 09:00 AM AND lastGenerated was before today's 09:00 AM -> Start new analysis
+      // Otherwise, use cache.
+      const needsUpdate = now >= threshold && lastDate < threshold;
+
+      if (!needsUpdate) {
+        setBriefing(text);
+        setLastGenerated(timestamp);
+        return;
+      }
+    }
+
+    // 2. Perform Analysis
     setLoading(true);
     const result = await getAIBriefing(data);
-    setBriefing(result || '브리핑을 생성할 수 없습니다.');
+    const content = result || '브리핑을 생성할 수 없습니다.';
+    const currentTime = new Date().toISOString();
+
+    setBriefing(content);
+    setLastGenerated(currentTime);
+
+    // 3. Update Cache
+    localStorage.setItem('nu_erp_ai_briefing', JSON.stringify({
+      text: content,
+      timestamp: currentTime
+    }));
+
     setLoading(false);
   };
 
@@ -39,16 +76,21 @@ const AIBriefing: React.FC<AIBriefingProps> = (data) => {
             <p className="text-indigo-200 text-xs font-bold uppercase tracking-widest mt-0.5">Gemini 3 Pro Real-time Analysis</p>
           </div>
         </div>
-        <button 
-          onClick={fetchBriefing}
+        <button
+          onClick={() => fetchBriefing(true)}
           disabled={loading}
           className="p-2 hover:bg-indigo-500 rounded-full transition-colors disabled:opacity-50"
         >
           <RefreshCw size={22} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
-      
+
       <div className="p-8">
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-slate-400 text-xs font-bold">
+            {lastGenerated ? `마지막 분석 실행: ${new Date(lastGenerated).toLocaleString()}` : ''}
+          </p>
+        </div>
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 space-y-4">
             <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>

@@ -10,7 +10,7 @@ export const getAIBriefing = async (data: {
 }) => {
   // Use process.env.API_KEY directly as per guidelines
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+
   const prompt = `
     Act as a senior financial advisor for nu-ERP. 
     Analyze the following business data and provide a concise, natural language briefing in Korean.
@@ -29,15 +29,16 @@ export const getAIBriefing = async (data: {
   `;
 
   try {
-    // Upgraded model to gemini-3-pro-preview for better complex task performance
+    // Corrected model name to a valid version (gemini-2.0-flash)
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
-    // Use response.text property directly (not a method)
-    return response.text;
-  } catch (error) {
+
+    // In @google/genai v1.x, response.text contains the generated content
+    return response.text || "브리핑을 생성할 수 없습니다.";
+  } catch (error: any) {
     console.error("Gemini Error:", error);
-    return "AI 브리핑을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+    return "AI 브리핑을 생성하는 중 오류가 발생했습니다. API 키가 유효한지 또는 쿼터가 남아있는지 확인해주세요.";
   }
 };
