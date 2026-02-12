@@ -69,13 +69,13 @@ const App: React.FC = () => {
       {activeTab === 'todo' && (
         <TodoList customers={customers} projects={projects} contracts={contracts} payments={payments} onUpdatePayment={updatePayment} />
       )}
-      {activeTab === 'users' && (
+      {activeTab === 'users' && currentUser.position === '총괄관리자' && (
         <UserList users={users} onAdd={addUser} onUpdate={updateUser} onDelete={deleteUser} />
       )}
       {activeTab === 'reports' && (
         <AIBriefing customers={customers} projects={projects} contracts={contracts} payments={payments} />
       )}
-      {activeTab === 'data-management' && (
+      {activeTab === 'data-management' && currentUser.position === '총괄관리자' && (
         <DataManager data={{ customers, projects, contracts, payments, users }} onRestore={restoreData} onReset={() => restoreData({})} onInitSample={initSampleData} />
       )}
     </Layout>

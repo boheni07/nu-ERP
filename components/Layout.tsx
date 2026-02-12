@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, Users, FolderKanban, Bot, Settings, UserCog, 
-  Database, ClipboardList, DatabaseZap, LogOut, X, Mail, Phone, 
+import {
+  LayoutDashboard, Users, FolderKanban, Bot, Settings, UserCog,
+  Database, ClipboardList, DatabaseZap, LogOut, X, Mail, Phone,
   ShieldCheck, History, ArrowRight, User as UserIcon, Activity as ActivityIcon,
   CircleCheck, Clock, AlertTriangle, Trash2, PlusCircle, Edit3, Eye, EyeOff, Save
 } from 'lucide-react';
@@ -22,7 +22,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, currentUser, onLogout, activities, onUpdateCurrentUser }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
+
   // Edit Form State
   const [editUser, setEditUser] = useState<User>({ ...currentUser });
   const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +34,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
       setErrorText(null);
     }
   }, [isEditModalOpen, currentUser]);
+
+  const isAdmin = currentUser.position === '총괄관리자';
 
   const menuGroups = [
     {
@@ -51,14 +53,20 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
     {
       items: [
         { id: 'customers', label: '거래처 관리', icon: Users },
-        { id: 'users', label: '사용자 관리', icon: UserCog },
       ]
     },
-    {
-      items: [
-        { id: 'data-management', label: '데이터 관리', icon: Database },
-      ]
-    }
+    ...(isAdmin ? [
+      {
+        items: [
+          { id: 'users', label: '사용자 관리', icon: UserCog },
+        ]
+      },
+      {
+        items: [
+          { id: 'data-management', label: '데이터 관리', icon: Database },
+        ]
+      }
+    ] : [])
   ];
 
   const getActivityIcon = (type: Activity['type']) => {
@@ -90,7 +98,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
           </h1>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Smart Enterprise System</p>
         </div>
-        
+
         <nav className="mt-2 px-3 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
           {menuGroups.map((group, gIndex) => (
             <div key={gIndex} className="space-y-1">
@@ -101,11 +109,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                      activeTab === item.id 
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 translate-x-1' 
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 translate-x-1'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                      }`}
                   >
                     <Icon size={18} />
                     {item.label}
@@ -138,23 +145,23 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
               <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">DBMS CONNECTED</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-full shadow-inner">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Live System</span>
             </div>
-            
+
             <div className="flex items-center gap-4 border-l pl-6 border-slate-100">
               <div className="text-right">
                 <span className="block text-sm font-black text-slate-800 leading-none">{currentUser.name}</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{currentUser.position || 'Staff'}</span>
               </div>
               <div className="relative group" onClick={() => setIsProfileOpen(true)}>
-                <img 
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`} 
-                  className="w-10 h-10 rounded-2xl border-2 border-white shadow-md cursor-pointer transition-transform group-hover:scale-105 active:scale-95" 
-                  alt="avatar" 
+                <img
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`}
+                  className="w-10 h-10 rounded-2xl border-2 border-white shadow-md cursor-pointer transition-transform group-hover:scale-105 active:scale-95"
+                  alt="avatar"
                 />
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
               </div>
@@ -185,10 +192,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
             <div className="flex-1 overflow-y-auto">
               <div className="p-8 text-center bg-gradient-to-b from-slate-50 to-white">
                 <div className="relative w-28 h-28 mx-auto mb-6">
-                  <img 
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`} 
-                    className="w-full h-full rounded-[2.5rem] border-4 border-white shadow-xl" 
-                    alt="profile large" 
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`}
+                    className="w-full h-full rounded-[2.5rem] border-4 border-white shadow-xl"
+                    alt="profile large"
                   />
                   <div className="absolute bottom-1 right-1 bg-indigo-600 text-white p-2 rounded-2xl border-4 border-white shadow-lg">
                     <ShieldCheck size={16} />
@@ -196,7 +203,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                 </div>
                 <h2 className="text-2xl font-black text-slate-900 leading-tight">{currentUser.name}</h2>
                 <p className="text-indigo-600 text-xs font-black uppercase tracking-[0.2em] mt-1">{currentUser.position || 'Staff'}</p>
-                
+
                 <div className="mt-8 grid grid-cols-2 gap-4">
                   <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Email Address</span>
@@ -214,7 +221,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                   <History size={18} className="text-slate-400" />
                   Recent Activity History
                 </h4>
-                
+
                 <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
                   {activities.length === 0 ? (
                     <div className="text-center py-12">
@@ -229,7 +236,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                         </div>
                         <div className="space-y-1">
                           <p className="text-xs text-slate-700 leading-relaxed">
-                            <span className="font-black text-slate-900">{activity.targetName}</span> 
+                            <span className="font-black text-slate-900">{activity.targetName}</span>
                             <span className="text-slate-500 mx-1">{activity.description}</span>
                           </p>
                           <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
@@ -246,13 +253,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
             </div>
 
             <div className="p-6 border-t bg-slate-50 space-y-3">
-              <button 
+              <button
                 onClick={() => setIsEditModalOpen(true)}
                 className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-100 transition-all flex items-center justify-center gap-2 active:scale-95"
               >
                 <UserCog size={18} /> 계정 정보 수정
               </button>
-              <button 
+              <button
                 onClick={() => { setIsProfileOpen(false); onLogout(); }}
                 className="w-full py-3 bg-rose-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-rose-100 hover:bg-rose-700 transition-all flex items-center justify-center gap-2 active:scale-95"
               >
@@ -295,9 +302,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">사용자 ID (수정불가)</label>
                   <div className="relative group">
                     <UserIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                    <input 
-                      type="text" 
-                      readOnly 
+                    <input
+                      type="text"
+                      readOnly
                       value={editUser.id}
                       className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 font-mono text-sm outline-none cursor-not-allowed"
                     />
@@ -307,18 +314,18 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">비밀번호</label>
                   <div className="relative group">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 z-10"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                    <input 
-                      type={showPassword ? "text" : "password"} 
+                    <input
+                      type={showPassword ? "text" : "password"}
                       required
                       value={editUser.password}
-                      onChange={(e) => setEditUser({...editUser, password: e.target.value})}
+                      onChange={(e) => setEditUser({ ...editUser, password: e.target.value })}
                       className="w-full pl-4 pr-12 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all"
                     />
                   </div>
@@ -326,21 +333,21 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">성명</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     value={editUser.name}
-                    onChange={(e) => setEditUser({...editUser, name: e.target.value})}
+                    onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">직위</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editUser.position}
-                    onChange={(e) => setEditUser({...editUser, position: e.target.value})}
+                    onChange={(e) => setEditUser({ ...editUser, position: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all"
                     placeholder="예: 과장, 책임연구원"
                   />
@@ -350,10 +357,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">연락처</label>
                   <div className="relative group">
                     <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={editUser.phone}
-                      onChange={(e) => setEditUser({...editUser, phone: formatPhoneNumber(e.target.value)})}
+                      onChange={(e) => setEditUser({ ...editUser, phone: formatPhoneNumber(e.target.value) })}
                       className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all"
                       placeholder="010-0000-0000"
                     />
@@ -364,10 +371,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">이메일</label>
                   <div className="relative group">
                     <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={editUser.email}
-                      onChange={(e) => setEditUser({...editUser, email: e.target.value})}
+                      onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
                       className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all"
                       placeholder="example@nu.com"
                     />
@@ -377,23 +384,23 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">개인 메모 (비고)</label>
-                <textarea 
+                <textarea
                   value={editUser.notes}
-                  onChange={(e) => setEditUser({...editUser, notes: e.target.value})}
+                  onChange={(e) => setEditUser({ ...editUser, notes: e.target.value })}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all h-24 resize-none"
                   placeholder="참고사항 입력"
                 />
               </div>
 
               <div className="pt-6 grid grid-cols-2 gap-4 border-t">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsEditModalOpen(false)}
                   className="py-4 border border-slate-200 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-50 transition-all active:scale-95"
                 >
                   취소
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active:scale-95"
                 >

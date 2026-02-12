@@ -76,14 +76,48 @@ export const useAppData = () => {
         logActivity({ type: 'LOGIN', category: 'USER', targetName: user.name, description: '시스템에 로그인했습니다.' });
     };
 
-    const handleLogout = () => {
+    const handleLogout = useCallback(() => {
         if (currentUser) {
             logActivity({ type: 'SYSTEM', category: 'USER', targetName: currentUser.name, description: '로그아웃했습니다.' });
         }
         setCurrentUser(null);
         localStorage.removeItem('nu_erp_session');
         setActiveTab('dashboard');
-    };
+    }, [currentUser, logActivity]);
+
+    // --- Auto Logout Logic ---
+    useEffect(() => {
+        if (!currentUser) return;
+
+        let logoutTimer: number;
+        const TIMEOUT_DURATION = 10 * 60 * 1000; // 10 minutes
+
+        const resetTimer = () => {
+            if (logoutTimer) window.clearTimeout(logoutTimer);
+            logoutTimer = window.setTimeout(() => {
+                console.log('Inactivity timeout reached. Logging out...');
+                handleLogout();
+                alert('10분 동안 활동이 없어 자동 로그아웃되었습니다.');
+            }, TIMEOUT_DURATION);
+        };
+
+        const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+
+        // Initialize timer
+        resetTimer();
+
+        // Add listeners
+        activityEvents.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        return () => {
+            if (logoutTimer) window.clearTimeout(logoutTimer);
+            activityEvents.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }, [currentUser, handleLogout]);
 
     const updateCurrentUser = (updated: User) => {
         const nextUsers = users.map(u => u.id === updated.id ? updated : u);
@@ -362,35 +396,33 @@ export const useAppData = () => {
     // --- Bulk Management ---
     const restoreData = async (data: any) => {
         setIsSyncing(true);
-        // Update local state
-        setCustomers(data.customers || []);
-        setProjects(data.projects || []);
-        setContracts(data.contracts || []);
-        setPayments(data.payments || []);
-        setUsers(data.users || []);
-
         try {
-            await apiService.saveUsers(data.users || []);
-            await apiService.saveCustomers(data.customers || []);
-            await apiService.saveProjects(data.projects || []);
+            // 1. DB 비우기 (FK 제약 조건 고려)
+            await apiService.clearAllData();
 
-            // Contract cleaning logic preserved from App.tsx
-            const validProjects = data.projects || [];
-            const projectIds = validProjects.map((p: Project) => String(p.id));
+            // 2. 의존성 순서에 맞게 데이터 저장
+            if (data.users?.length) await apiService.saveUsers(data.users);
+            if (data.customers?.length) await apiService.saveCustomers(data.customers);
+            if (data.projects?.length) await apiService.saveProjects(data.projects);
+
+            const projectIds = (data.projects || []).map((p: Project) => String(p.id));
             const validContracts = (data.contracts || []).filter((c: Contract) => projectIds.includes(String(c.projectId)));
-
-            // Remove updatedPayments if present in restore data
             const sanitizedContracts = validContracts.map((c: any) => {
                 const { updatedPayments, ...rest } = c;
                 return rest;
             });
-
-            await apiService.saveContracts(sanitizedContracts);
+            if (sanitizedContracts.length) await apiService.saveContracts(sanitizedContracts);
 
             const contractIds = validContracts.map((c: Contract) => String(c.id));
             const validPayments = (data.payments || []).filter((p: Payment) => contractIds.includes(String(p.contractId)));
+            if (validPayments.length) await apiService.savePayments(validPayments);
 
-            await apiService.savePayments(validPayments);
+            // 3. 로컬 상태 업데이트
+            setCustomers(data.customers || []);
+            setProjects(data.projects || []);
+            setContracts(data.contracts || []);
+            setPayments(data.payments || []);
+            setUsers(data.users || []);
 
             logActivity({ type: 'SYSTEM', category: 'USER', targetName: 'Database', description: '데이터를 복원했습니다.' });
         } catch (err: any) {
@@ -403,24 +435,26 @@ export const useAppData = () => {
 
     const initSampleData = async () => {
         setIsSyncing(true);
-        setCustomers(SAMPLE_CUSTOMERS);
-        setProjects(SAMPLE_PROJECTS);
-        setContracts(SAMPLE_CONTRACTS);
-        setPayments(SAMPLE_PAYMENTS);
-        setUsers(SAMPLE_USERS);
-
         try {
-            await Promise.all([
-                apiService.saveCustomers(SAMPLE_CUSTOMERS),
-                apiService.saveProjects(SAMPLE_PROJECTS),
-                apiService.saveContracts(SAMPLE_CONTRACTS),
-                apiService.savePayments(SAMPLE_PAYMENTS),
-                apiService.saveUsers(SAMPLE_USERS)
-            ]);
+            await apiService.clearAllData();
+
+            await apiService.saveUsers(SAMPLE_USERS);
+            await apiService.saveCustomers(SAMPLE_CUSTOMERS);
+            await apiService.saveProjects(SAMPLE_PROJECTS);
+            await apiService.saveContracts(SAMPLE_CONTRACTS);
+            await apiService.savePayments(SAMPLE_PAYMENTS);
+
+            setCustomers(SAMPLE_CUSTOMERS);
+            setProjects(SAMPLE_PROJECTS);
+            setContracts(SAMPLE_CONTRACTS);
+            setPayments(SAMPLE_PAYMENTS);
+            setUsers(SAMPLE_USERS);
+
             logActivity({ type: 'SYSTEM', category: 'USER', targetName: 'Sample Data', description: '표준 데이터를 로드했습니다.' });
             setActiveTab('dashboard');
         } catch (err) {
             console.error("Sample init failed:", err);
+            alert("샘플 데이터 로드 중 오류가 발생했습니다.");
         } finally {
             setIsSyncing(false);
         }

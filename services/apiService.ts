@@ -171,6 +171,16 @@ export const apiService = {
 
     const currentIds = data.map(d => d.id);
     await supabase.from('app_users').delete().not('id', 'in', currentIds);
+  },
+
+  // --- Utility Operations ---
+  clearAllData: async () => {
+    // FK 제약 조건을 고려하여 역순으로 삭제
+    await supabase.from('payments').delete().neq('id', '0');
+    await supabase.from('contracts').delete().neq('id', '0');
+    await supabase.from('projects').delete().neq('id', '0');
+    await supabase.from('customers').delete().neq('id', '0');
+    await supabase.from('app_users').delete().neq('id', '0');
   }
 };
 

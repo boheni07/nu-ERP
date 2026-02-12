@@ -1,6 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Download, Upload, Trash2, RotateCcw, AlertTriangle, CheckCircle, Info, Loader2, ShieldAlert, X } from 'lucide-react';
+import { apiService } from '../services/apiService';
 import { Customer, Project, Contract, Payment, User } from '../types';
 
 interface DataManagerProps {
@@ -70,27 +71,30 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
 
   const handleBackupRequest = () => {
     executeAction([
-      { label: '데이터 구조 무결성 검사', weight: 20 },
-      { label: 'JSON 바이너리 패키징', weight: 50 },
-      { label: '다운로드 스트림 생성', weight: 30 }
-    ], () => {
+      { label: '데이터베이스 실시간 스냅샷 조회', weight: 40 },
+      { label: 'JSON 바이너리 패키징', weight: 40 },
+      { label: '다운로드 스트림 생성', weight: 20 }
+    ], async () => {
       try {
-        const backupData = JSON.stringify(data, null, 2);
+        // 백업 시점에 DB에서 직접 최신 데이터를 가져옴
+        const dbSnapshot = await apiService.fetchAllData();
+        const backupData = JSON.stringify(dbSnapshot, null, 2);
         const blob = new Blob([backupData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
         link.href = url;
-        link.download = `nu-erp-backup-${timestamp}.json`;
+        link.download = `nu-erp-db-backup-${timestamp}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        setStatus({ type: 'success', message: '백업 파일이 안전하게 생성되었습니다.' });
+        setStatus({ type: 'success', message: '데이터베이스 백업 파일이 성공적으로 생성되었습니다.' });
       } catch (err) {
-        setStatus({ type: 'error', message: '백업 파일 생성 중 오류가 발생했습니다.' });
+        console.error('Backup failed:', err);
+        setStatus({ type: 'error', message: '데이터베이스에서 정보를 가져오는 중 오류가 발생했습니다.' });
       }
     });
   };
@@ -361,7 +365,7 @@ const DataManager: React.FC<DataManagerProps> = ({ data, onRestore, onReset, onI
         <div className="space-y-4">
           <h4 className="text-xl font-black text-white uppercase tracking-tight">System Data Policy</h4>
           <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-2xl">
-            nu-ERP는 강력한 로컬 DBMS 엔진을 기반으로 설계되었습니다. 모든 데이터는 귀하의 장치에 로컬로 암호화되어 저장되므로 기기 교체나 브라우저 데이터 삭제 전 <span className="text-white font-black underline decoration-indigo-500">반드시 백업 파일을 생성</span>하십시오.
+            nu-ERP는 <span className="text-white font-black underline decoration-indigo-500">Supabase 클라우드 데이터베이스</span> 엔진을 기반으로 설계되었습니다. 모든 데이터는 실시간으로 클라우드에 안전하게 동기화되지만, 데이터 아카이빙이나 중대한 환경 변경을 대비하여 정기적인 <span className="text-white font-black underline decoration-indigo-500">JSON 백업 파일 생성</span>을 권장합니다.
           </p>
         </div>
       </div>
