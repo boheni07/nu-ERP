@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Project, Contract, Payment } from '../types';
 import { getAIBriefing } from '../services/geminiService';
-import { Sparkles, BrainCircuit, RefreshCw } from 'lucide-react';
+import { getLocalAIBriefing } from '../services/vllmService';
+import { Sparkles, BrainCircuit, RefreshCw, Cpu } from 'lucide-react';
 
 interface AIBriefingProps {
   customers: Customer[];
@@ -15,23 +16,20 @@ const AIBriefing: React.FC<AIBriefingProps> = (data) => {
   const [briefing, setBriefing] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<'gemini' | 'vllm'>('gemini');
 
   const fetchBriefing = async (force = false) => {
-    // 1. Check Cache
-    const cached = localStorage.getItem('nu_erp_ai_briefing');
+    // 1. Check Cache (with model variant)
+    const cacheKey = `nu_erp_ai_briefing_${selectedModel}`;
+    const cached = localStorage.getItem(cacheKey);
+    
     if (cached && !force) {
       const { text, timestamp } = JSON.parse(cached);
-
       const lastDate = new Date(timestamp);
       const now = new Date();
-
-      // Target: Today at 09:00 AM
       const threshold = new Date();
       threshold.setHours(9, 0, 0, 0);
 
-      // Logical Check:
-      // If now is past 09:00 AM AND lastGenerated was before today's 09:00 AM -> Start new analysis
-      // Otherwise, use cache.
       const needsUpdate = now >= threshold && lastDate < threshold;
 
       if (!needsUpdate) {
@@ -43,7 +41,14 @@ const AIBriefing: React.FC<AIBriefingProps> = (data) => {
 
     // 2. Perform Analysis
     setLoading(true);
-    const result = await getAIBriefing(data);
+    let result = '';
+    
+    if (selectedModel === 'vllm') {
+      result = await getLocalAIBriefing(data);
+    } else {
+      result = await getAIBriefing(data);
+    }
+    
     const content = result || '브리핑을 생성할 수 없습니다.';
     const currentTime = new Date().toISOString();
 
@@ -51,7 +56,7 @@ const AIBriefing: React.FC<AIBriefingProps> = (data) => {
     setLastGenerated(currentTime);
 
     // 3. Update Cache
-    localStorage.setItem('nu_erp_ai_briefing', JSON.stringify({
+    localStorage.setItem(cacheKey, JSON.stringify({
       text: content,
       timestamp: currentTime
     }));
@@ -61,7 +66,7 @@ const AIBriefing: React.FC<AIBriefingProps> = (data) => {
 
   useEffect(() => {
     fetchBriefing();
-  }, []);
+  }, [selectedModel]);
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-indigo-100 overflow-hidden">
@@ -72,29 +77,48 @@ const AIBriefing: React.FC<AIBriefingProps> = (data) => {
           </div>
           <div>
             <h3 className="text-xl font-black">AI 재무 분석 비서</h3>
-            {/* Updated UI text to reflect Gemini 3 Pro version */}
-            <p className="text-indigo-200 text-xs font-bold uppercase tracking-widest mt-0.5">Gemini 3 Pro Real-time Analysis</p>
+            <p className="text-indigo-200 text-xs font-bold uppercase tracking-widest mt-0.5">
+              {selectedModel === 'gemini' ? 'Gemini 3 Pro Real-time Analysis' : 'Local nu-vLLM Deep Analysis'}
+            </p>
           </div>
         </div>
-        <button
-          onClick={() => fetchBriefing(true)}
-          disabled={loading}
-          className="p-2 hover:bg-indigo-500 rounded-full transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={22} className={loading ? 'animate-spin' : ''} />
-        </button>
+        
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-700/50 p-1 rounded-xl flex gap-1">
+            <button
+              onClick={() => setSelectedModel('gemini')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${selectedModel === 'gemini' ? 'bg-white text-indigo-600 shadow-lg' : 'text-indigo-200 hover:text-white'}`}
+            >
+              GEMINI
+            </button>
+            <button
+              onClick={() => setSelectedModel('vllm')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${selectedModel === 'vllm' ? 'bg-white text-indigo-600 shadow-lg' : 'text-indigo-200 hover:text-white'}`}
+            >
+              nu-vLLM
+            </button>
+          </div>
+          
+          <button
+            onClick={() => fetchBriefing(true)}
+            disabled={loading}
+            className="p-2 hover:bg-indigo-500 rounded-full transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={22} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       <div className="p-8">
         <div className="flex justify-between items-center mb-4">
           <p className="text-slate-400 text-xs font-bold">
-            {lastGenerated ? `마지막 분석 실행: ${new Date(lastGenerated).toLocaleString()}` : ''}
+            {lastGenerated ? `${selectedModel.toUpperCase()} 분석 실행: ${new Date(lastGenerated).toLocaleString()}` : ''}
           </p>
         </div>
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 space-y-4">
             <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-            <p className="text-slate-500 text-sm font-black">데이터 심층 분석 중...</p>
+            <p className="text-slate-500 text-sm font-black">{selectedModel === 'vllm' ? '로컬 서버 연산 중...' : '데이터 심층 분석 중...'}</p>
           </div>
         ) : (
           <div className="prose prose-slate max-w-none">
